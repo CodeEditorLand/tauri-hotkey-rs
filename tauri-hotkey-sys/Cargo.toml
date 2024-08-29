@@ -9,7 +9,7 @@ authors = [
 description = "Native bindings for the Tauri hotkey API"
 edition = "2018"
 license = "MIT"
-repository = "https://github.com/tauri-apps/tauri-hotkey-rs"
+repository = "HTTPS://GitHub.Com/tauri-apps/tauri-hotkey-rs"
 
 [dependencies]
 thiserror = "1"
