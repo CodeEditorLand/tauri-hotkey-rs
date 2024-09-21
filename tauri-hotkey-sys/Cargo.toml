@@ -2,9 +2,9 @@
 name = "tauri-hotkey-sys"
 version = "0.1.2"
 authors = [
-  "James Birtles <jameshbirtles@gmail.com>",
-  "Karl Skomski <karl@skomski.com>",
-  "Lucas Nogueira <lucas@tauri.studio>"
+	"James Birtles <jameshbirtles@gmail.com>",
+	"Karl Skomski <karl@skomski.com>",
+	"Lucas Nogueira <lucas@tauri.studio>",
 ]
 description = "Native bindings for the Tauri hotkey API"
 edition = "2018"
@@ -15,7 +15,7 @@ repository = "https://github.com/tauri-apps/tauri-hotkey-rs"
 thiserror = "1"
 
 [target."cfg(windows)".dependencies]
-winapi = { version = "0.3", features = [ "winuser", "errhandlingapi" ] }
+winapi = { version = "0.3", features = ["winuser", "errhandlingapi"] }
 
 [target."cfg(target_os = \"linux\")".dependencies]
 x11-dl = "2.18"
