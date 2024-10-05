@@ -6,22 +6,19 @@ mod macos;
 mod windows;
 
 mod traits;
-pub use traits::{HotkeyError, HotkeyListener, ListenerHotkey};
-
 #[cfg(target_os = "linux")]
 pub use linux::keys;
 #[cfg(target_os = "linux")]
 pub use linux::modifiers;
 #[cfg(target_os = "linux")]
 pub use linux::Listener;
-
 #[cfg(target_os = "macos")]
 pub use macos::keys;
 #[cfg(target_os = "macos")]
 pub use macos::modifiers;
 #[cfg(target_os = "macos")]
 pub use macos::Listener;
-
+pub use traits::{HotkeyError, HotkeyListener, ListenerHotkey};
 #[cfg(target_os = "windows")]
 pub use windows::keys;
 #[cfg(target_os = "windows")]
@@ -51,8 +48,10 @@ mod tests {
 		assert_eq!(listener.registered_hotkeys()[0], hotkey2);
 		assert_eq!(listener.unregister_hotkey(hotkey2), Ok(()));
 		assert_eq!(listener.registered_hotkeys().len(), 0);
-		let hotkey3 =
-			ListenerHotkey::new(modifiers::CONTROL | modifiers::SUPER | modifiers::ALT, keys::P);
+		let hotkey3 = ListenerHotkey::new(
+			modifiers::CONTROL | modifiers::SUPER | modifiers::ALT,
+			keys::P,
+		);
 		assert_eq!(listener.register_hotkey(hotkey3, || {}), Ok(()));
 		assert_eq!(listener.registered_hotkeys()[0], hotkey3);
 		assert_eq!(listener.registered_hotkeys().len(), 1);
