@@ -16,14 +16,11 @@ use serde::{Deserialize, Serialize};
 use tauri_hotkey_sys::*;
 
 type GlobalListener = Lazy<Arc<Mutex<Listener>>>;
-type GlobalHotkeyMap = Arc<
-	Mutex<HashMap<Hotkey, HashMap<usize, Box<dyn 'static + FnMut() + Send>>>>,
->;
+type GlobalHotkeyMap =
+	Arc<Mutex<HashMap<Hotkey, HashMap<usize, Box<dyn 'static + FnMut() + Send>>>>>;
 
-static GLOBAL_LISTENER:GlobalListener =
-	Lazy::new(|| Arc::new(Mutex::new(Listener::new())));
-static GLOBAL_HOTKEY_MAP:Lazy<GlobalHotkeyMap> =
-	Lazy::new(GlobalHotkeyMap::default);
+static GLOBAL_LISTENER:GlobalListener = Lazy::new(|| Arc::new(Mutex::new(Listener::new())));
+static GLOBAL_HOTKEY_MAP:Lazy<GlobalHotkeyMap> = Lazy::new(GlobalHotkeyMap::default);
 static ID_COUNTER:AtomicUsize = AtomicUsize::new(0);
 
 pub struct HotkeyManager {
@@ -47,10 +44,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 impl Default for HotkeyManager {
 	fn default() -> Self {
-		Self {
-			registered_hotkeys:Vec::new(),
-			id:ID_COUNTER.fetch_add(1, Ordering::Relaxed),
-		}
+		Self { registered_hotkeys:Vec::new(), id:ID_COUNTER.fetch_add(1, Ordering::Relaxed) }
 	}
 }
 
@@ -77,24 +71,16 @@ impl HotkeyManager {
 			},
 			Entry::Vacant(entry) => {
 				GLOBAL_LISTENER.lock().unwrap().register_hotkey(
-					ListenerHotkey::new(
-						hotkey.modifiers_as_flag(),
-						hotkey.keys_as_flag(),
-					),
+					ListenerHotkey::new(hotkey.modifiers_as_flag(), hotkey.keys_as_flag()),
 					move || {
-						if let Some(entry) =
-							GLOBAL_HOTKEY_MAP.lock().unwrap().get_mut(&hotkey)
-						{
+						if let Some(entry) = GLOBAL_HOTKEY_MAP.lock().unwrap().get_mut(&hotkey) {
 							for (_, cb) in entry.iter_mut() {
 								cb();
 							}
 						}
 					},
 				)?;
-				let mut new_map:HashMap<
-					usize,
-					Box<dyn 'static + FnMut() + Send>,
-				> = HashMap::new();
+				let mut new_map:HashMap<usize, Box<dyn 'static + FnMut() + Send>> = HashMap::new();
 				new_map.insert(self.id, Box::new(callback));
 				entry.insert(new_map);
 			},
@@ -122,12 +108,10 @@ impl HotkeyManager {
 				}
 				if entry.is_empty() {
 					occ_entry.remove_entry();
-					GLOBAL_LISTENER.lock().unwrap().unregister_hotkey(
-						ListenerHotkey::new(
-							hotkey.modifiers_as_flag(),
-							hotkey.keys_as_flag(),
-						),
-					)?;
+					GLOBAL_LISTENER.lock().unwrap().unregister_hotkey(ListenerHotkey::new(
+						hotkey.modifiers_as_flag(),
+						hotkey.keys_as_flag(),
+					))?;
 				}
 			},
 			std::collections::hash_map::Entry::Vacant(_) => {
@@ -180,8 +164,7 @@ pub fn parse_hotkey(hotkey_string:&str) -> Result<Hotkey> {
 				modifiers.push(Modifier::ALT);
 				continue;
 			},
-			"COMMANDORCONTROL" | "COMMANDORCTRL" | "CMDORCTRL"
-			| "CMDORCONTROL" => {
+			"COMMANDORCONTROL" | "COMMANDORCTRL" | "CMDORCTRL" | "CMDORCONTROL" => {
 				#[cfg(target_os = "macos")]
 				modifiers.push(Modifier::SUPER);
 				#[cfg(not(target_os = "macos"))]
@@ -313,27 +296,18 @@ pub fn parse_hotkey(hotkey_string:&str) -> Result<Hotkey> {
 		match key {
 			Some(key) => {
 				if keys.contains(&key) {
-					return Err(crate::Error::InvalidHotkey(format!(
-						"duplicated key {}",
-						raw
-					)));
+					return Err(crate::Error::InvalidHotkey(format!("duplicated key {}", raw)));
 				}
 				keys.push(key);
 			},
 			None => {
 				if let Ok(key) = Key::from_str(&token) {
 					if keys.contains(&key) {
-						return Err(crate::Error::InvalidHotkey(format!(
-							"duplicated key {}",
-							raw
-						)));
+						return Err(crate::Error::InvalidHotkey(format!("duplicated key {}", raw)));
 					}
 					keys.push(key);
 				} else {
-					return Err(crate::Error::InvalidHotkey(format!(
-						"unknown key {}",
-						token
-					)));
+					return Err(crate::Error::InvalidHotkey(format!("unknown key {}", token)));
 				}
 			},
 		}
@@ -344,9 +318,7 @@ pub fn parse_hotkey(hotkey_string:&str) -> Result<Hotkey> {
 	}
 
 	match keys.len() {
-		0 => {
-			Err(Error::InvalidHotkey("hotkey has no key specified".to_string()))
-		},
+		0 => Err(Error::InvalidHotkey("hotkey has no key specified".to_string())),
 		_ => Ok(Hotkey { modifiers, keys }),
 	}
 }
@@ -369,15 +341,7 @@ impl Hotkey {
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(
-	Debug,
-	Deserialize,
-	Copy,
-	Clone,
-	Serialize,
-	strum_macros::EnumString,
-	PartialEq,
-	Hash,
-	Eq,
+	Debug, Deserialize, Copy, Clone, Serialize, strum_macros::EnumString, PartialEq, Hash, Eq,
 )]
 #[repr(u32)]
 pub enum Modifier {
@@ -389,22 +353,12 @@ pub enum Modifier {
 }
 
 impl fmt::Display for Modifier {
-	fn fmt(&self, f:&mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{:?}", self)
-	}
+	fn fmt(&self, f:&mut fmt::Formatter) -> fmt::Result { write!(f, "{:?}", self) }
 }
 
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 #[derive(
-	Debug,
-	Deserialize,
-	Copy,
-	Clone,
-	Serialize,
-	strum_macros::EnumString,
-	PartialEq,
-	Hash,
-	Eq,
+	Debug, Deserialize, Copy, Clone, Serialize, strum_macros::EnumString, PartialEq, Hash, Eq,
 )]
 #[repr(u32)]
 pub enum Key {
@@ -535,38 +489,23 @@ pub enum Key {
 }
 
 impl fmt::Display for Key {
-	fn fmt(&self, f:&mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{:?}", self)
-	}
+	fn fmt(&self, f:&mut fmt::Formatter) -> fmt::Result { write!(f, "{:?}", self) }
 }
 
 impl fmt::Display for Hotkey {
 	fn fmt(&self, f:&mut fmt::Formatter) -> fmt::Result {
-		let modifier_string:String =
-			self.modifiers.iter().fold(String::new(), |all, one| {
-				if !all.is_empty() {
-					format!("{}+{}", all, one)
-				} else {
-					one.to_string()
-				}
-			});
+		let modifier_string:String = self.modifiers.iter().fold(String::new(), |all, one| {
+			if !all.is_empty() { format!("{}+{}", all, one) } else { one.to_string() }
+		});
 		let hotkey_string = {
 			if !modifier_string.is_empty() {
 				format!(
 					"{}+{}",
 					modifier_string,
-					self.keys
-						.iter()
-						.map(|k| k.to_string())
-						.collect::<Vec<String>>()
-						.join("\"")
+					self.keys.iter().map(|k| k.to_string()).collect::<Vec<String>>().join("\"")
 				)
 			} else {
-				self.keys
-					.iter()
-					.map(|k| k.to_string())
-					.collect::<Vec<String>>()
-					.join("\"")
+				self.keys.iter().map(|k| k.to_string()).collect::<Vec<String>>().join("\"")
 			}
 		};
 		write!(f, "{}", hotkey_string)
@@ -585,25 +524,16 @@ mod tests {
 		);
 		assert_eq!(
 			parse_hotkey("CTRL+SHIFT+P").unwrap(),
-			Hotkey {
-				modifiers:vec![Modifier::CTRL, Modifier::SHIFT],
-				keys:vec![Key::P]
-			}
+			Hotkey { modifiers:vec![Modifier::CTRL, Modifier::SHIFT], keys:vec![Key::P] }
 		);
-		assert_eq!(
-			parse_hotkey("S").unwrap(),
-			Hotkey { modifiers:vec![], keys:vec![Key::S] }
-		);
+		assert_eq!(parse_hotkey("S").unwrap(), Hotkey { modifiers:vec![], keys:vec![Key::S] });
 		assert_eq!(
 			parse_hotkey("ALT+BACKSPACE").unwrap(),
 			Hotkey { modifiers:vec![Modifier::ALT], keys:vec![Key::BACKSPACE] }
 		);
 		assert_eq!(
 			parse_hotkey("SHIFT+SUPER+A").unwrap(),
-			Hotkey {
-				modifiers:vec![Modifier::SHIFT, Modifier::SUPER],
-				keys:vec![Key::A]
-			}
+			Hotkey { modifiers:vec![Modifier::SHIFT, Modifier::SUPER], keys:vec![Key::A] }
 		);
 		assert_eq!(
 			parse_hotkey("SUPER+RIGHT").unwrap(),
@@ -612,32 +542,19 @@ mod tests {
 		assert_eq!(
 			parse_hotkey("SUPER+CTRL+SHIFT+AltGr+9").unwrap(),
 			Hotkey {
-				modifiers:vec![
-					Modifier::SUPER,
-					Modifier::CTRL,
-					Modifier::SHIFT,
-					Modifier::ALTGR
-				],
+				modifiers:vec![Modifier::SUPER, Modifier::CTRL, Modifier::SHIFT, Modifier::ALTGR],
 				keys:vec![Key::KEY_9]
 			}
 		);
 		assert_eq!(
 			parse_hotkey("super+ctrl+SHIFT+alt+Up").unwrap(),
 			Hotkey {
-				modifiers:vec![
-					Modifier::SUPER,
-					Modifier::CTRL,
-					Modifier::SHIFT,
-					Modifier::ALT
-				],
+				modifiers:vec![Modifier::SUPER, Modifier::CTRL, Modifier::SHIFT, Modifier::ALT],
 				keys:vec![Key::UP]
 			}
 		);
 
-		assert_eq!(
-			parse_hotkey("5").unwrap(),
-			Hotkey { modifiers:vec![], keys:vec![Key::KEY_5] }
-		);
+		assert_eq!(parse_hotkey("5").unwrap(), Hotkey { modifiers:vec![], keys:vec![Key::KEY_5] });
 
 		assert_eq!(
 			parse_hotkey("KEY_5").unwrap(),

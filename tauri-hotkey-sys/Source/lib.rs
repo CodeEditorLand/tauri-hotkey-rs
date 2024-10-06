@@ -48,10 +48,8 @@ mod tests {
 		assert_eq!(listener.registered_hotkeys()[0], hotkey2);
 		assert_eq!(listener.unregister_hotkey(hotkey2), Ok(()));
 		assert_eq!(listener.registered_hotkeys().len(), 0);
-		let hotkey3 = ListenerHotkey::new(
-			modifiers::CONTROL | modifiers::SUPER | modifiers::ALT,
-			keys::P,
-		);
+		let hotkey3 =
+			ListenerHotkey::new(modifiers::CONTROL | modifiers::SUPER | modifiers::ALT, keys::P);
 		assert_eq!(listener.register_hotkey(hotkey3, || {}), Ok(()));
 		assert_eq!(listener.registered_hotkeys()[0], hotkey3);
 		assert_eq!(listener.registered_hotkeys().len(), 1);

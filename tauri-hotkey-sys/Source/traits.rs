@@ -14,17 +14,10 @@ impl ListenerHotkey {
 
 pub trait HotkeyListener {
 	fn new() -> Self;
-	fn register_hotkey<F>(
-		&mut self,
-		hotkey:ListenerHotkey,
-		callback:F,
-	) -> Result<(), HotkeyError>
+	fn register_hotkey<F>(&mut self, hotkey:ListenerHotkey, callback:F) -> Result<(), HotkeyError>
 	where
 		F: 'static + FnMut() + Send;
-	fn unregister_hotkey(
-		&mut self,
-		hotkey:ListenerHotkey,
-	) -> Result<(), HotkeyError>;
+	fn unregister_hotkey(&mut self, hotkey:ListenerHotkey) -> Result<(), HotkeyError>;
 	fn registered_hotkeys(&self) -> Vec<ListenerHotkey>;
 }
 

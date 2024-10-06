@@ -182,11 +182,8 @@ impl CarbonRef {
 unsafe impl Sync for CarbonRef {}
 unsafe impl Send for CarbonRef {}
 
-type ListenerMap = Arc<
-	Mutex<
-		HashMap<ListenerId, (ListenerHotkey, Box<ListenerCallback>, CarbonRef)>,
-	>,
->;
+type ListenerMap =
+	Arc<Mutex<HashMap<ListenerId, (ListenerHotkey, Box<ListenerCallback>, CarbonRef)>>>;
 
 pub struct Listener {
 	last_id:ListenerId,
@@ -206,16 +203,13 @@ impl HotkeyListener for Listener {
 		thread::spawn(move || {
 			let hotkey_map_clone = hotkey_map.clone();
 			let callback = Box::new(move |id| {
-				if let Some((_, handler, _)) =
-					hotkey_map_clone.lock().unwrap().get_mut(&id)
-				{
+				if let Some((_, handler, _)) = hotkey_map_clone.lock().unwrap().get_mut(&id) {
 					handler();
 				}
 			});
 
 			let saved_callback = Box::into_raw(callback);
-			let event_handler_ref =
-				register_event_handler_callback(saved_callback);
+			let event_handler_ref = register_event_handler_callback(saved_callback);
 
 			if event_handler_ref.is_null() {
 				eprintln!("register_event_handler_callback failed!");
@@ -226,83 +220,54 @@ impl HotkeyListener for Listener {
 			loop {
 				match thread_receiver.recv() {
 					Ok(HotkeyMessage::RegisterHotkey(id, modifiers, key)) => unsafe {
-						let handler_ref =
-							register_hotkey(id, modifiers as i32, key as i32);
+						let handler_ref = register_hotkey(id, modifiers as i32, key as i32);
 						if handler_ref.is_null() {
-							if let Err(err) = thread_sender.send(
-								HotkeyMessage::RegisterHotkeyResult(Err(
+							if let Err(err) =
+								thread_sender.send(HotkeyMessage::RegisterHotkeyResult(Err(
 									HotkeyError::BackendApiError(0),
-								)),
-							) {
-								eprintln!(
-									"hotkey: thread_sender.send error {}",
-									err
-								);
+								))) {
+								eprintln!("hotkey: thread_sender.send error {}", err);
 							}
 							continue;
 						}
-						if let Some((_, _, handler)) =
-							hotkey_map.lock().unwrap().get_mut(&id)
-						{
+						if let Some((_, _, handler)) = hotkey_map.lock().unwrap().get_mut(&id) {
 							*handler = CarbonRef::new(handler_ref);
 						}
-						if let Err(err) = thread_sender
-							.send(HotkeyMessage::RegisterHotkeyResult(Ok(())))
+						if let Err(err) =
+							thread_sender.send(HotkeyMessage::RegisterHotkeyResult(Ok(())))
 						{
-							eprintln!(
-								"hotkey: thread_sender.send error {}",
-								err
-							);
+							eprintln!("hotkey: thread_sender.send error {}", err);
 						}
 					},
 					Ok(HotkeyMessage::UnregisterHotkey(id)) => unsafe {
-						if let Some((_, _, handler_ref)) =
-							hotkey_map.lock().unwrap().remove(&id)
-						{
+						if let Some((_, _, handler_ref)) = hotkey_map.lock().unwrap().remove(&id) {
 							let result = unregister_hotkey(handler_ref.0);
 							if result != 0 {
-								if let Err(err) = thread_sender.send(
-									HotkeyMessage::UnregisterHotkeyResult(Err(
-										HotkeyError::BackendApiError(
-											result as usize,
-										),
-									)),
-								) {
-									eprintln!(
-										"hotkey: thread_sender.send error {}",
-										err
-									);
+								if let Err(err) =
+									thread_sender.send(HotkeyMessage::UnregisterHotkeyResult(Err(
+										HotkeyError::BackendApiError(result as usize),
+									))) {
+									eprintln!("hotkey: thread_sender.send error {}", err);
 								}
-							} else if let Err(err) = thread_sender.send(
-								HotkeyMessage::UnregisterHotkeyResult(Ok(())),
-							) {
-								eprintln!(
-									"hotkey: thread_sender.send error {}",
-									err
-								);
+							} else if let Err(err) =
+								thread_sender.send(HotkeyMessage::UnregisterHotkeyResult(Ok(())))
+							{
+								eprintln!("hotkey: thread_sender.send error {}", err);
 							}
 						} else {
 							panic!("hotkey should be never be none");
 						}
 					},
 					Ok(HotkeyMessage::DropThread) => unsafe {
-						for (_, _, handler_ref) in
-							hotkey_map.lock().unwrap().values()
-						{
+						for (_, _, handler_ref) in hotkey_map.lock().unwrap().values() {
 							let result = unregister_hotkey(handler_ref.0);
 							if result != 0 {
-								eprintln!(
-									"drop: unregister_hotkey failed: {}",
-									result
-								);
+								eprintln!("drop: unregister_hotkey failed: {}", result);
 							}
 						}
 						let result = uninstall_event_handler(event_handler_ref);
 						if result != 0 {
-							eprintln!(
-								"drop: uninstall_event_handler failed: {}",
-								result
-							);
+							eprintln!("drop: uninstall_event_handler failed: {}", result);
 						}
 						let _ = Box::from_raw(saved_callback);
 						break;
@@ -315,19 +280,10 @@ impl HotkeyListener for Listener {
 			}
 		});
 
-		Listener {
-			sender:method_sender,
-			receiver:method_receiver,
-			handlers:hotkeys,
-			last_id:0,
-		}
+		Listener { sender:method_sender, receiver:method_receiver, handlers:hotkeys, last_id:0 }
 	}
 
-	fn register_hotkey<F>(
-		&mut self,
-		hotkey:ListenerHotkey,
-		handler:F,
-	) -> Result<(), HotkeyError>
+	fn register_hotkey<F>(&mut self, hotkey:ListenerHotkey, handler:F) -> Result<(), HotkeyError>
 	where
 		F: 'static + FnMut() + Send, {
 		for (key, ..) in self.handlers.lock().unwrap().values() {
@@ -337,16 +293,12 @@ impl HotkeyListener for Listener {
 		}
 		self.last_id += 1;
 		let id = self.last_id;
-		self.handlers.lock().unwrap().insert(
-			id,
-			(hotkey, Box::new(handler), CarbonRef::new(std::ptr::null_mut())),
-		);
+		self.handlers
+			.lock()
+			.unwrap()
+			.insert(id, (hotkey, Box::new(handler), CarbonRef::new(std::ptr::null_mut())));
 		self.sender
-			.send(HotkeyMessage::RegisterHotkey(
-				id,
-				hotkey.modifiers,
-				hotkey.key,
-			))
+			.send(HotkeyMessage::RegisterHotkey(id, hotkey.modifiers, hotkey.key))
 			.map_err(|_| HotkeyError::ChannelError())?;
 
 		let result = match self.receiver.recv() {
@@ -361,10 +313,7 @@ impl HotkeyListener for Listener {
 		result
 	}
 
-	fn unregister_hotkey(
-		&mut self,
-		hotkey:ListenerHotkey,
-	) -> Result<(), HotkeyError> {
+	fn unregister_hotkey(&mut self, hotkey:ListenerHotkey) -> Result<(), HotkeyError> {
 		let mut found_id = -1;
 		for (id, (key, ..)) in self.handlers.lock().unwrap().iter() {
 			if *key == hotkey {

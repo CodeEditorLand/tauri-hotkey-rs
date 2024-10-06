@@ -149,8 +149,7 @@ pub struct Listener {
 	receiver:Receiver<HotkeyMessage>,
 }
 
-type ListenerMap =
-	Arc<Mutex<HashMap<ListenerId, (ListenerHotkey, Box<ListenerCallback>)>>>;
+type ListenerMap = Arc<Mutex<HashMap<ListenerId, (ListenerHotkey, Box<ListenerCallback>)>>>;
 
 impl HotkeyListener for Listener {
 	fn new() -> Listener {
@@ -167,39 +166,27 @@ impl HotkeyListener for Listener {
 				let root = (xlib.XDefaultRootWindow)(display);
 
 				// Only trigger key release at end of repeated keys
-				let mut supported_rtrn:i32 =
-					mem::MaybeUninit::uninit().assume_init();
-				(xlib.XkbSetDetectableAutoRepeat)(
-					display,
-					1,
-					&mut supported_rtrn,
-				);
+				let mut supported_rtrn:i32 = mem::MaybeUninit::uninit().assume_init();
+				(xlib.XkbSetDetectableAutoRepeat)(display, 1, &mut supported_rtrn);
 
 				(xlib.XSelectInput)(display, root, xlib::KeyReleaseMask);
-				let mut event:xlib::XEvent =
-					mem::MaybeUninit::uninit().assume_init();
+				let mut event:xlib::XEvent = mem::MaybeUninit::uninit().assume_init();
 				loop {
 					if (xlib.XPending)(display) > 0 {
 						(xlib.XNextEvent)(display, &mut event);
 						if let xlib::KeyRelease = event.get_type() {
-							if let Some((_, handler)) =
-								hotkey_map.lock().unwrap().get_mut(&(
-									event.key.keycode as i32,
-									event.key.state,
-								)) {
+							if let Some((_, handler)) = hotkey_map
+								.lock()
+								.unwrap()
+								.get_mut(&(event.key.keycode as i32, event.key.state))
+							{
 								handler();
 							}
 						}
 					}
 					match thread_receiver.try_recv() {
-						Ok(HotkeyMessage::RegisterHotkey(
-							_,
-							modifiers,
-							key,
-						)) => {
-							let keycode =
-								(xlib.XKeysymToKeycode)(display, key.into())
-									as i32;
+						Ok(HotkeyMessage::RegisterHotkey(_, modifiers, key)) => {
+							let keycode = (xlib.XKeysymToKeycode)(display, key.into()) as i32;
 
 							let result = (xlib.XGrabKey)(
 								display,
@@ -211,48 +198,31 @@ impl HotkeyListener for Listener {
 								xlib::GrabModeAsync,
 							);
 							if result == 0 {
-								if let Err(err) = thread_sender.send(
-									HotkeyMessage::RegisterHotkeyResult(Err(
+								if let Err(err) =
+									thread_sender.send(HotkeyMessage::RegisterHotkeyResult(Err(
 										HotkeyError::BackendApiError(0),
-									)),
-								) {
-									eprintln!(
-										"hotkey: thread_sender.send error {}",
-										err
-									);
+									))) {
+									eprintln!("hotkey: thread_sender.send error {}", err);
 								}
-							} else if let Err(err) = thread_sender.send(
-								HotkeyMessage::RegisterHotkeyResult(Ok((
-									keycode, modifiers,
-								))),
-							) {
-								eprintln!(
-									"hotkey: thread_sender.send error {}",
-									err
-								);
+							} else if let Err(err) = thread_sender
+								.send(HotkeyMessage::RegisterHotkeyResult(Ok((keycode, modifiers))))
+							{
+								eprintln!("hotkey: thread_sender.send error {}", err);
 							}
 						},
 						Ok(HotkeyMessage::UnregisterHotkey(id)) => {
-							let result =
-								(xlib.XUngrabKey)(display, id.0, id.1, root);
+							let result = (xlib.XUngrabKey)(display, id.0, id.1, root);
 							if result == 0 {
-								if let Err(err) = thread_sender.send(
-									HotkeyMessage::UnregisterHotkeyResult(Err(
+								if let Err(err) =
+									thread_sender.send(HotkeyMessage::UnregisterHotkeyResult(Err(
 										HotkeyError::BackendApiError(0),
-									)),
-								) {
-									eprintln!(
-										"hotkey: thread_sender.send error {}",
-										err
-									);
+									))) {
+									eprintln!("hotkey: thread_sender.send error {}", err);
 								}
-							} else if let Err(err) = thread_sender.send(
-								HotkeyMessage::UnregisterHotkeyResult(Ok(())),
-							) {
-								eprintln!(
-									"hotkey: thread_sender.send error {}",
-									err
-								);
+							} else if let Err(err) =
+								thread_sender.send(HotkeyMessage::UnregisterHotkeyResult(Ok(())))
+							{
+								eprintln!("hotkey: thread_sender.send error {}", err);
 							}
 						},
 						Ok(HotkeyMessage::DropThread) => {
@@ -260,9 +230,7 @@ impl HotkeyListener for Listener {
 							return;
 						},
 						Err(err) => {
-							if let std::sync::mpsc::TryRecvError::Disconnected =
-								err
-							{
+							if let std::sync::mpsc::TryRecvError::Disconnected = err {
 								eprintln!("hotkey: try_recv error {}", err);
 							}
 						},
@@ -274,18 +242,10 @@ impl HotkeyListener for Listener {
 			}
 		});
 
-		Listener {
-			handlers:hotkeys,
-			sender:method_sender,
-			receiver:method_receiver,
-		}
+		Listener { handlers:hotkeys, sender:method_sender, receiver:method_receiver }
 	}
 
-	fn register_hotkey<F>(
-		&mut self,
-		hotkey:ListenerHotkey,
-		handler:F,
-	) -> Result<(), HotkeyError>
+	fn register_hotkey<F>(&mut self, hotkey:ListenerHotkey, handler:F) -> Result<(), HotkeyError>
 	where
 		F: 'static + FnMut() + Send, {
 		for (key, _) in self.handlers.lock().unwrap().values() {
@@ -294,18 +254,11 @@ impl HotkeyListener for Listener {
 			}
 		}
 		self.sender
-			.send(HotkeyMessage::RegisterHotkey(
-				(0, 0),
-				hotkey.modifiers,
-				hotkey.key,
-			))
+			.send(HotkeyMessage::RegisterHotkey((0, 0), hotkey.modifiers, hotkey.key))
 			.map_err(|_| HotkeyError::ChannelError())?;
 		match self.receiver.recv() {
 			Ok(HotkeyMessage::RegisterHotkeyResult(Ok(id))) => {
-				self.handlers
-					.lock()
-					.unwrap()
-					.insert(id, (hotkey, Box::new(handler)));
+				self.handlers.lock().unwrap().insert(id, (hotkey, Box::new(handler)));
 				Ok(())
 			},
 			Ok(HotkeyMessage::RegisterHotkeyResult(Err(err))) => Err(err),
@@ -314,10 +267,7 @@ impl HotkeyListener for Listener {
 		}
 	}
 
-	fn unregister_hotkey(
-		&mut self,
-		hotkey:ListenerHotkey,
-	) -> Result<(), HotkeyError> {
+	fn unregister_hotkey(&mut self, hotkey:ListenerHotkey) -> Result<(), HotkeyError> {
 		let mut found_id = (-1, 0);
 		for (id, (key, _)) in self.handlers.lock().unwrap().iter() {
 			if *key == hotkey {
