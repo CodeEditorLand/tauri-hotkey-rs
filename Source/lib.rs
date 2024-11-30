@@ -64,9 +64,11 @@ impl HotkeyManager {
 		}
 
 		let hotkey_ = hotkey.clone();
+
 		match GLOBAL_HOTKEY_MAP.lock().unwrap().entry(hotkey.clone()) {
 			Entry::Occupied(mut entry) => {
 				let entry = entry.get_mut();
+
 				entry.insert(self.id, Box::new(callback));
 			},
 			Entry::Vacant(entry) => {
@@ -80,13 +82,17 @@ impl HotkeyManager {
 						}
 					},
 				)?;
+
 				let mut new_map:HashMap<usize, Box<dyn 'static + FnMut() + Send>> = HashMap::new();
+
 				new_map.insert(self.id, Box::new(callback));
+
 				entry.insert(new_map);
 			},
 		}
 
 		info!("register hotkey {}", hotkey_);
+
 		self.registered_hotkeys.push(hotkey_);
 
 		Ok(())
@@ -103,11 +109,14 @@ impl HotkeyManager {
 		match GLOBAL_HOTKEY_MAP.lock().unwrap().entry(hotkey.clone()) {
 			std::collections::hash_map::Entry::Occupied(mut occ_entry) => {
 				let entry = occ_entry.get_mut();
+
 				if entry.remove(&self.id).is_none() {
 					panic!("should never be vacant");
 				}
+
 				if entry.is_empty() {
 					occ_entry.remove_entry();
+
 					GLOBAL_LISTENER.lock().unwrap().unregister_hotkey(ListenerHotkey::new(
 						hotkey.modifiers_as_flag(),
 						hotkey.keys_as_flag(),
@@ -118,15 +127,19 @@ impl HotkeyManager {
 				panic!("should never be vacant");
 			},
 		}
+
 		info!("unregister hotkey {}", hotkey);
+
 		Ok(())
 	}
 
 	pub fn unregister_all(&mut self) -> Result<()> {
 		let mut result = Ok(());
+
 		for hotkey in self.registered_hotkeys.clone().iter() {
 			result = self.unregister(hotkey);
 		}
+
 		result
 	}
 }
@@ -141,10 +154,14 @@ impl Drop for HotkeyManager {
 
 pub fn parse_hotkey(hotkey_string:&str) -> Result<Hotkey> {
 	let mut modifiers = Vec::new();
+
 	let mut keys = Vec::new();
+
 	let mut shifted = false;
+
 	for raw in hotkey_string.to_uppercase().split('+') {
 		let mut token = raw.trim().to_string();
+
 		if token.is_empty() {
 			continue;
 		}
@@ -153,15 +170,18 @@ pub fn parse_hotkey(hotkey_string:&str) -> Result<Hotkey> {
 			// command aliases
 			"COMMAND" | "CMD" => {
 				modifiers.push(Modifier::SUPER);
+
 				continue;
 			},
 			"CONTROL" => {
 				modifiers.push(Modifier::CTRL);
+
 				continue;
 			},
 			#[cfg(target_os = "macos")]
 			"OPTION" => {
 				modifiers.push(Modifier::ALT);
+
 				continue;
 			},
 			"COMMANDORCONTROL" | "COMMANDORCTRL" | "CMDORCTRL" | "CMDORCONTROL" => {
@@ -169,11 +189,13 @@ pub fn parse_hotkey(hotkey_string:&str) -> Result<Hotkey> {
 				modifiers.push(Modifier::SUPER);
 				#[cfg(not(target_os = "macos"))]
 				modifiers.push(Modifier::CTRL);
+
 				continue;
 			},
 			_ => {
 				if let Ok(res) = Modifier::from_str(&token) {
 					modifiers.push(res);
+
 					continue;
 				}
 			},
@@ -189,86 +211,107 @@ pub fn parse_hotkey(hotkey_string:&str) -> Result<Hotkey> {
 		match token.as_str() {
 			")" => {
 				shifted = true;
+
 				key = Some(Key::KEY_0);
 			},
 			"!" => {
 				shifted = true;
+
 				key = Some(Key::KEY_1);
 			},
 			"@" => {
 				shifted = true;
+
 				key = Some(Key::KEY_2);
 			},
 			"#" => {
 				shifted = true;
+
 				key = Some(Key::KEY_3);
 			},
 			"$" => {
 				shifted = true;
+
 				key = Some(Key::KEY_4);
 			},
 			"%" => {
 				shifted = true;
+
 				key = Some(Key::KEY_5);
 			},
 			"^" => {
 				shifted = true;
+
 				key = Some(Key::KEY_6);
 			},
 			"&" => {
 				shifted = true;
+
 				key = Some(Key::KEY_7);
 			},
 			"*" => {
 				shifted = true;
+
 				key = Some(Key::KEY_8);
 			},
 			"(" => {
 				shifted = true;
+
 				key = Some(Key::KEY_9);
 			},
 			":" => {
 				shifted = true;
+
 				key = Some(Key::SEMICOLON);
 			},
 			"<" => {
 				shifted = true;
+
 				key = Some(Key::COMMA);
 			},
 			">" => {
 				shifted = true;
+
 				key = Some(Key::PERIOD);
 			},
 			"_" => {
 				shifted = true;
+
 				key = Some(Key::MINUS);
 			},
 			"?" => {
 				shifted = true;
+
 				key = Some(Key::SLASH);
 			},
 			"~" => {
 				shifted = true;
+
 				key = Some(Key::OPENQUOTE);
 			},
 			"{" => {
 				shifted = true;
+
 				key = Some(Key::OPENBRACKET)
 			},
 			"|" => {
 				shifted = true;
+
 				key = Some(Key::BACKSLASH);
 			},
 			"}" => {
 				shifted = true;
+
 				key = Some(Key::CLOSEBRACKET);
 			},
 			"+" | "PLUS" => {
 				shifted = true;
+
 				key = Some(Key::EQUAL);
 			},
 			"\"" => {
 				shifted = true;
+
 				key = Some(Key::SINGLEQUOTE);
 			},
 			_ => {},
@@ -298,6 +341,7 @@ pub fn parse_hotkey(hotkey_string:&str) -> Result<Hotkey> {
 				if keys.contains(&key) {
 					return Err(crate::Error::InvalidHotkey(format!("duplicated key {}", raw)));
 				}
+
 				keys.push(key);
 			},
 			None => {
@@ -305,6 +349,7 @@ pub fn parse_hotkey(hotkey_string:&str) -> Result<Hotkey> {
 					if keys.contains(&key) {
 						return Err(crate::Error::InvalidHotkey(format!("duplicated key {}", raw)));
 					}
+
 					keys.push(key);
 				} else {
 					return Err(crate::Error::InvalidHotkey(format!("unknown key {}", token)));
@@ -497,6 +542,7 @@ impl fmt::Display for Hotkey {
 		let modifier_string:String = self.modifiers.iter().fold(String::new(), |all, one| {
 			if !all.is_empty() { format!("{}+{}", all, one) } else { one.to_string() }
 		});
+
 		let hotkey_string = {
 			if !modifier_string.is_empty() {
 				format!(
@@ -508,6 +554,7 @@ impl fmt::Display for Hotkey {
 				self.keys.iter().map(|k| k.to_string()).collect::<Vec<String>>().join("\"")
 			}
 		};
+
 		write!(f, "{}", hotkey_string)
 	}
 }
@@ -522,23 +569,29 @@ mod tests {
 			parse_hotkey("CTRL+P").unwrap(),
 			Hotkey { modifiers:vec![Modifier::CTRL], keys:vec![Key::P] }
 		);
+
 		assert_eq!(
 			parse_hotkey("CTRL+SHIFT+P").unwrap(),
 			Hotkey { modifiers:vec![Modifier::CTRL, Modifier::SHIFT], keys:vec![Key::P] }
 		);
+
 		assert_eq!(parse_hotkey("S").unwrap(), Hotkey { modifiers:vec![], keys:vec![Key::S] });
+
 		assert_eq!(
 			parse_hotkey("ALT+BACKSPACE").unwrap(),
 			Hotkey { modifiers:vec![Modifier::ALT], keys:vec![Key::BACKSPACE] }
 		);
+
 		assert_eq!(
 			parse_hotkey("SHIFT+SUPER+A").unwrap(),
 			Hotkey { modifiers:vec![Modifier::SHIFT, Modifier::SUPER], keys:vec![Key::A] }
 		);
+
 		assert_eq!(
 			parse_hotkey("SUPER+RIGHT").unwrap(),
 			Hotkey { modifiers:vec![Modifier::SUPER], keys:vec![Key::RIGHT] }
 		);
+
 		assert_eq!(
 			parse_hotkey("SUPER+CTRL+SHIFT+AltGr+9").unwrap(),
 			Hotkey {
@@ -546,6 +599,7 @@ mod tests {
 				keys:vec![Key::KEY_9]
 			}
 		);
+
 		assert_eq!(
 			parse_hotkey("super+ctrl+SHIFT+alt+Up").unwrap(),
 			Hotkey {
