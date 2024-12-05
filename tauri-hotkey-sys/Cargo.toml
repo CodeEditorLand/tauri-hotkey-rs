@@ -8,7 +8,7 @@ authors = [
 ]
 description = "Native bindings for the Tauri hotkey API"
 edition = "2018"
-license = "MIT"
+license-file = "LICENSE"
 repository = "https://github.com/tauri-apps/tauri-hotkey-rs"
 
 [dependencies]

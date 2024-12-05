@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Cross platform global hotkey API"
 edition = "2018"
-license = "MIT"
+license-file = "LICENSE"
 repository = "https://github.com/tauri-apps/tauri-hotkey-rs"
 version = "0.1.2"
 exclude = ["/tauri-hotkey-sys/"]
