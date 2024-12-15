@@ -1,12 +1,12 @@
 use std::{
-	collections::{hash_map::Entry, HashMap},
+	collections::{HashMap, hash_map::Entry},
 	fmt,
 	hash::Hash,
 	str::FromStr,
 	sync::{
-		atomic::{AtomicUsize, Ordering},
 		Arc,
 		Mutex,
+		atomic::{AtomicUsize, Ordering},
 	},
 };
 

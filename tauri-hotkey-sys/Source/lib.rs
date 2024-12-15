@@ -7,24 +7,24 @@ mod windows;
 
 mod traits;
 #[cfg(target_os = "linux")]
+pub use linux::Listener;
+#[cfg(target_os = "linux")]
 pub use linux::keys;
 #[cfg(target_os = "linux")]
 pub use linux::modifiers;
-#[cfg(target_os = "linux")]
-pub use linux::Listener;
+#[cfg(target_os = "macos")]
+pub use macos::Listener;
 #[cfg(target_os = "macos")]
 pub use macos::keys;
 #[cfg(target_os = "macos")]
 pub use macos::modifiers;
-#[cfg(target_os = "macos")]
-pub use macos::Listener;
 pub use traits::{HotkeyError, HotkeyListener, ListenerHotkey};
+#[cfg(target_os = "windows")]
+pub use windows::Listener;
 #[cfg(target_os = "windows")]
 pub use windows::keys;
 #[cfg(target_os = "windows")]
 pub use windows::modifiers;
-#[cfg(target_os = "windows")]
-pub use windows::Listener;
 
 #[cfg(test)]
 mod tests {

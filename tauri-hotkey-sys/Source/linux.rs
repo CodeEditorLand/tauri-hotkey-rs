@@ -3,10 +3,10 @@ use std::{
 	mem,
 	ptr,
 	sync::{
-		mpsc,
-		mpsc::{Receiver, Sender},
 		Arc,
 		Mutex,
+		mpsc,
+		mpsc::{Receiver, Sender},
 	},
 };
 

@@ -2,10 +2,10 @@ use std::{
 	collections::HashMap,
 	mem,
 	sync::{
-		mpsc,
-		mpsc::{Receiver, Sender},
 		Arc,
 		Mutex,
+		mpsc,
+		mpsc::{Receiver, Sender},
 	},
 	thread,
 };
