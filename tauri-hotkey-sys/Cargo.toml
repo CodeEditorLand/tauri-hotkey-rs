@@ -1,6 +1,10 @@
+[dependencies]
+thiserror = "1"
+
+[lib]
+path = "Source/lib.rs"
+
 [package]
-name = "tauri-hotkey-sys"
-version = "0.1.2"
 authors = [
   "James Birtles <jameshbirtles@gmail.com>",
   "Karl Skomski <karl@skomski.com>",
@@ -8,17 +12,24 @@ authors = [
 ]
 description = "Native bindings for the Tauri hotkey API"
 edition = "2018"
-license = "MIT"
+license-file = "LICENSE"
+name = "tauri-hotkey-sys"
 repository = "https://github.com/tauri-apps/tauri-hotkey-rs"
+version = "0.1.2"
 
-[dependencies]
-thiserror = "1"
+[target]
+
+[target.'cfg(target_os = "linux")']
+
+[target.'cfg(target_os = "linux")'.dependencies]
+x11-dl = "2.18"
+
+[target.'cfg(target_os = "macos")']
+
+[target.'cfg(target_os = "macos")'.build-dependencies]
+cc = "1"
+
+[target."cfg(windows)"]
 
 [target."cfg(windows)".dependencies]
 winapi = { version = "0.3", features = [ "winuser", "errhandlingapi" ] }
-
-[target."cfg(target_os = \"linux\")".dependencies]
-x11-dl = "2.18"
-
-[target."cfg(target_os = \"macos\")".build-dependencies]
-cc = "1"
